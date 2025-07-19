@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Scripts fragment -->
+    <th:block th:fragment="scripts">
+        <!-- Your common scripts go here -->
+ 
+        
+        <!-- Block for page-specific scripts -->
+        <th:block th:insert="${scripts} ?: ~{}"></th:block>
+    </th:block>
+</body>
+</html>
