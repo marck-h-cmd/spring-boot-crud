@@ -54,7 +54,7 @@ public class EmpleadoController {
         if(result.hasErrors()) {
             model.addAttribute("titulo", modo.equals("editar") ? "Editar Empleado" : "Nuevo Empleado");
             model.addAttribute("modo", modo);
-            return "empleado/formulario";
+            return "empleado/form";
         }
 
         empleadoService.agregar(empleado);
