@@ -17,7 +17,7 @@ public class ProveedorController {
     @Autowired
     private ProveedorService proveedorService;
 
-    @GetMapping("/")
+    @GetMapping("/listar")
     public String listarProveedores(Model model) {
         model.addAttribute("proveedores", proveedorService.listarTodos());
         model.addAttribute("titulo", "Lista de Proveedores");
@@ -61,7 +61,7 @@ public class ProveedorController {
             redirect.addFlashAttribute("success", "Proveedor actualizado correctamente");
         }
         
-        return "redirect:/proveedor/";
+        return "redirect:/proveedor/listar";
     }
 
     @GetMapping("/editar/{id}")
@@ -69,7 +69,7 @@ public class ProveedorController {
         Proveedor proveedor = proveedorService.buscar(id);
         
         if(proveedor == null) {
-            return "redirect:/proveedor/";
+            return "redirect:/proveedor/listar";
         }
 
         model.addAttribute("proveedor", proveedor);
@@ -82,6 +82,6 @@ public class ProveedorController {
     public String eliminarProveedor(@PathVariable Long id, RedirectAttributes redirect) {
         proveedorService.eliminar(id);
         redirect.addFlashAttribute("success", "Proveedor eliminado correctamente");
-        return "redirect:/proveedor/";
+        return "redirect:/proveedor/listar";
     }
 }
