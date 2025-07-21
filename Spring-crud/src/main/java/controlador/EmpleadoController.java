@@ -12,6 +12,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.validation.*;
 import java.util.List;
 
+/**
+ * Controlador para gestionar las operaciones CRUD de empleados
+ */
 @Controller
 @RequestMapping("/empleado")
 public class EmpleadoController {
@@ -19,6 +22,9 @@ public class EmpleadoController {
     @Autowired
     private EmpleadoService empleadoService;
 
+    /**
+     * Muestra la lista de todos los empleados
+     */
     @GetMapping("/listar")
     public String listarEmpleados(Model model) {
         List<Empleado> empleados = empleadoService.listarTodos();
@@ -27,6 +33,9 @@ public class EmpleadoController {
         return "empleado/listar"; 
     }
 
+    /**
+     * Muestra el formulario para crear un nuevo empleado
+     */
     @GetMapping("/crear")
     public String mostrarFormularioCrear(Model model) {
         model.addAttribute("empleado", new Empleado());
@@ -35,6 +44,9 @@ public class EmpleadoController {
         return "empleado/form";
     }
 
+    /**
+     * Procesa el guardado o actualización de un empleado
+     */
     @PostMapping("/guardar")
     public String guardarEmpleado(@Valid @ModelAttribute Empleado empleado, 
                                 BindingResult result,
@@ -42,13 +54,30 @@ public class EmpleadoController {
                                 RedirectAttributes redirect,
                                 @RequestParam String modo) {
         
-        if(empleadoService.existePorDni(empleado.getDni())) {
-            result.rejectValue("dni", "error.dni", "El DNI ya está registrado");
+        // Solo validar DNI si es nuevo registro o si el DNI ha cambiado
+        if(modo.equals("crear")) {
+            if(empleadoService.existePorDni(empleado.getDni())) {
+                result.rejectValue("dni", "error.dni", "El DNI ya está registrado");
+            }
+        } else {
+            Empleado empleadoExistente = empleadoService.buscarPorDni(empleado.getDni());
+            if(empleadoExistente != null && !empleadoExistente.getId().equals(empleado.getId())) {
+                result.rejectValue("dni", "error.dni", "El DNI ya está registrado");
+            }
         }
-        
 
-        if(empleadoService.existePorEmail(empleado.getEmail())) {
-            result.rejectValue("email", "error.email", "El email ya está registrado");
+        // Solo validar email si es nuevo registro o si el email ha cambiado
+        if(modo.equals("crear")) {
+            if(empleadoService.existePorEmail(empleado.getEmail())) {
+                result.rejectValue("email", "error.email", "El email ya está registrado");
+            }
+        } else {
+            Empleado empleadoExistente = empleadoService.buscar(empleado.getId());
+            if(empleadoExistente != null && !empleadoExistente.getEmail().equals(empleado.getEmail())) {
+                if(empleadoService.existePorEmail(empleado.getEmail())) {
+                    result.rejectValue("email", "error.email", "El email ya está registrado");
+                }
+            }
         }
 
         if(result.hasErrors()) {
@@ -62,6 +91,9 @@ public class EmpleadoController {
         return "redirect:/empleado/listar";
     }
 
+    /**
+     * Muestra el formulario para editar un empleado existente
+     */
     @GetMapping("/editar/{id}")
     public String mostrarFormularioEditar(@PathVariable Long id, Model model) {
         Empleado empleado = empleadoService.buscar(id);
@@ -76,19 +108,13 @@ public class EmpleadoController {
         return "empleado/form";
     }
 
+    /**
+     * Elimina un empleado
+     */
     @GetMapping("/eliminar/{id}")
     public String eliminarEmpleado(@PathVariable Long id, RedirectAttributes redirect) {
         empleadoService.eliminar(id);
         redirect.addFlashAttribute("success", "Empleado eliminado correctamente");
         return "redirect:/empleado/listar";
     }
-
-    /*
-    @GetMapping("/buscar")
-    public String buscarEmpleados(@RequestParam String criterio, Model model) {
-        List<Empleado> empleados = empleadoService.buscarPorNombreOApellido(criterio);
-        model.addAttribute("empleados", empleados);
-        model.addAttribute("titulo", "Resultados de búsqueda: " + criterio);
-        return "empleado/listar";
-    }  */
 }
