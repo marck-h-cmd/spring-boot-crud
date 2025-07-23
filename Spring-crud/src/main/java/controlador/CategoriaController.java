@@ -79,3 +79,4 @@ public class CategoriaController {
         return "redirect:/categoria/listar";
     }
 }
+

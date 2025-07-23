@@ -42,3 +42,4 @@ public class UnidadServiceImpl implements UnidadService {
         return unidadRepository.existsByDescripcion(descripcion);
     }
 }
+

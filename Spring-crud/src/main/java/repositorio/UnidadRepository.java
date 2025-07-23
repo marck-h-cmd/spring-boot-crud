@@ -10,3 +10,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UnidadRepository extends JpaRepository<Unidad, Long> {
     boolean existsByDescripcion(String descripcion);
 }
+

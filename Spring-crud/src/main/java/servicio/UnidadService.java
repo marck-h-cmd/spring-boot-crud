@@ -14,3 +14,4 @@ public interface UnidadService {
     void eliminar(Long id);
     boolean existePorDescripcion(String descripcion);
 }
+

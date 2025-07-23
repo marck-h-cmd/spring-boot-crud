@@ -21,3 +21,4 @@ public class Categoria {
     @NotBlank(message = "La descripción no puede estar vacía")
     private String descripcion;
 }
+
