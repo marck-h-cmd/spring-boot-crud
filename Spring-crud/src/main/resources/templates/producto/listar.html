@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Lista de Productos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <header th:replace="~{fragments/header::header}"></header>
+    
+    <section class="container-fluid mt-4">
+        <!-- Alertas -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${success}"></span>
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+
+        <!-- Alertas de stock bajo -->
+        <div th:if="${!soloStockBajo and productosStockBajo.size() > 0}" 
+             class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-exclamation-triangle"></i> Atención:</strong> 
+            Hay <span th:text="${productosStockBajo.size()}"></span> producto(s) con stock bajo.
+            <a th:href="@{/producto/stock-bajo}" class="btn btn-sm btn-outline-warning ml-2">Ver productos</a>
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h1 class="h4 mb-0" th:text="${titulo}">Listado de Productos</h1>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <span class="badge badge-light badge-pill">
+                            Total: <span th:text="${productos.size()}"></span> productos
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- Controles superiores -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <a th:href="@{/producto/crear}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Nuevo Producto
+                        </a>
+                        <a th:href="@{/producto/stock-bajo}" class="btn btn-warning ml-2">
+                            <i class="fas fa-exclamation-triangle"></i> Stock Bajo
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <!-- Filtro por categoría -->
+                        <select class="form-control" id="filtroCategoria" onchange="filtrarPorCategoria()">
+                            <option value="">Todas las categorías</option>
+                            <option th:each="cat : ${categorias}" 
+                                    th:value="${cat}" 
+                                    th:text="${cat}"
+                                    th:selected="${cat == categoriaSeleccionada}"></option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <!-- Búsqueda -->
+                        <form th:action="@{/producto/buscar}" method="get" class="form-inline">
+                            <div class="input-group w-100">
+                                <input type="text" name="criterio" class="form-control" 
+                                       placeholder="Buscar productos..." th:value="${criterio}">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                    <a th:href="@{/producto/listar}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Tabla de productos -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="producto : ${productos}" 
+                                th:class="${producto.stockBajo} ? 'table-warning' : ''">
+                                <td>
+                                    <strong th:text="${producto.codigo}"></strong>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong th:text="${producto.nombre}"></strong>
+                                        <small class="text-muted d-block" th:text="${producto.unidad}"></small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-secondary" th:text="${producto.categoria}"></span>
+                                </td>
+                                <td class="text-right">
+                                    <strong>S/. <span th:text="${#numbers.formatDecimal(producto.precio, 0, 2)}"></span></strong>
+                                </td>
+                                <td class="text-center">
+                                    <span th:class="${producto.stockBajo} ? 'badge badge-danger' : 'badge badge-success'" 
+                                          th:text="${producto.stock}"></span>
+                                    <small class="text-muted d-block">
+                                        Min: <span th:text="${producto.stockMinimo}"></span>
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    <span th:if="${producto.activo}" class="badge badge-success">Activo</span>
+                                    <span th:unless="${producto.activo}" class="badge badge-secondary">Inactivo</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a th:href="@{/producto/editar/} + ${producto.id}" 
+                                           class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        <button type="button" class="btn btn-sm btn-info" 
+                                                title="Actualizar Stock"
+                                                data-toggle="modal" 
+                                                data-target="#stockModal"
+                                                th:attr="data-id=${producto.id}, data-nombre=${producto.nombre}, data-stock=${producto.stock}">
+                                            <i class="fas fa-boxes"></i>
+                                        </button>
+                                        
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                title="Eliminar"
+                                                data-toggle="modal" 
+                                                data-target="#confirmDeleteModal"
+                                                th:attr="data-id=${producto.id}, data-nombre=${producto.nombre}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- Mensaje si no hay productos -->
+                    <div th:if="${productos.empty}" class="text-center py-4">
+                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No se encontraron productos</h5>
+                        <a th:href="@{/producto/crear}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Agregar primer producto
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal para actualizar stock -->
+    <div class="modal fade" id="stockModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">Actualizar Stock</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form action="/producto/actualizar-stock" method="post">
+                    <div class="modal-body">
+                        <input type="hidden" id="stockProductoId" name="id">
+                        <p>Producto: <strong id="stockProductoNombre"></strong></p>
+                        <p>Stock actual: <span id="stockActual" class="badge badge-info"></span></p>
+                        
+                        <div class="form-group">
+                            <label for="nuevoStock">Nuevo Stock:</label>
+                            <input type="number" class="form-control" id="nuevoStock" name="nuevoStock" 
+                                   min="0" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info">Actualizar Stock</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar eliminación -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Confirmar Eliminación</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    ¿Está seguro que desea eliminar el producto <strong id="deleteProductoNombre"></strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <a id="confirmDeleteBtn" href="#" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Eliminar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+    
+    <script>
+        // Modal de eliminación
+        $('#confirmDeleteModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var id = button.data('id');
+            var nombre = button.data('nombre');
+            var modal = $(this);
+            modal.find('#deleteProductoNombre').text(nombre);
+            modal.find('#confirmDeleteBtn').attr('href', '/producto/eliminar/' + id);
+        });
+
+        // Modal de stock
+        $('#stockModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var id = button.data('id');
+            var nombre = button.data('nombre');
+            var stock = button.data('stock');
+            var modal = $(this);
+            modal.find('#stockProductoId').val(id);
+            modal.find('#stockProductoNombre').text(nombre);
+            modal.find('#stockActual').text(stock);
+            modal.find('#nuevoStock').val(stock);
+        });
+
+        // Filtro por categoría
+        function filtrarPorCategoria() {
+            var categoria = document.getElementById('filtroCategoria').value;
+            if (categoria) {
+                window.location.href = '/producto/categoria/' + encodeURIComponent(categoria);
+            } else {
+                window.location.href = '/producto/listar';
+            }
+        }
+    </script>
+</body>
+</html>

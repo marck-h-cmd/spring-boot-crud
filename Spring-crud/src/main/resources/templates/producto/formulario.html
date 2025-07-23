@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${titulo}">Formulario Producto</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <header th:replace="~{fragments/header::header}"></header>
+    
+    <section class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="h4 mb-0" th:text="${titulo}"></h1>
+                    </div>
+                    <div class="col-auto">
+                        <a th:href="@{/producto/listar}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left"></i> Volver al listado
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <form th:action="@{/producto/guardar}" th:object="${producto}" method="post">
+                    <input type="hidden" th:field="*{id}">
+                    <input type="hidden" th:name="modo" th:value="${modo}">
+                    
+                    <!-- Primera fila: Información básica -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="codigo">
+                                    <i class="fas fa-barcode text-primary"></i> Código *
+                                </label>
+                                <input type="text" th:field="*{codigo}" class="form-control" 
+                                       th:classappend="${#fields.hasErrors('codigo')} ? 'is-invalid' : ''" 
+                                       required maxlength="20" placeholder="Ej: PROD001">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('codigo')}" 
+                                     th:errors="*{codigo}"></div>
+                                <small class="form-text text-muted">Código único del producto</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="nombre">
+                                    <i class="fas fa-tag text-primary"></i> Nombre *
+                                </label>
+                                <input type="text" th:field="*{nombre}" class="form-control" 
+                                       th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''" 
+                                       required maxlength="100" placeholder="Nombre del producto">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" 
+                                     th:errors="*{nombre}"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Segunda fila: Descripción -->
+                    <div class="form-group">
+                        <label for="descripcion">
+                            <i class="fas fa-align-left text-primary"></i> Descripción
+                        </label>
+                        <textarea th:field="*{descripcion}" class="form-control" rows="3"
+                                  th:classappend="${#fields.hasErrors('descripcion')} ? 'is-invalid' : ''" 
+                                  maxlength="500" placeholder="Descripción detallada del producto"></textarea>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('descripcion')}" 
+                             th:errors="*{descripcion}"></div>
+                        <small class="form-text text-muted">Máximo 500 caracteres</small>
+                    </div>
+                    
+                    <!-- Tercera fila: Categoría y Unidad -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="categoria">
+                                    <i class="fas fa-folder text-primary"></i> Categoría *
+                                </label>
+                                <input type="text" th:field="*{categoria}" class="form-control" 
+                                       th:classappend="${#fields.hasErrors('categoria')} ? 'is-invalid' : ''" 
+                                       required maxlength="50" placeholder="Ej: Electrónicos"
+                                       list="categoriasDatalist">
+                                <datalist id="categoriasDatalist">
+                                    <option th:each="cat : ${categorias}" th:value="${cat}"></option>
+                                </datalist>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('categoria')}" 
+                                     th:errors="*{categoria}"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="unidad">
+                                    <i class="fas fa-ruler text-primary"></i> Unidad de Medida *
+                                </label>
+                                <select th:field="*{unidad}" class="form-control" 
+                                        th:classappend="${#fields.hasErrors('unidad')} ? 'is-invalid' : ''" 
+                                        required>
+                                    <option value="">Seleccionar unidad...</option>
+                                    <option value="Pieza">Pieza</option>
+                                    <option value="Kilogramo">Kilogramo</option>
+                                    <option value="Gramo">Gramo</option>
+                                    <option value="Litro">Litro</option>
+                                    <option value="Metro">Metro</option>
+                                    <option value="Centímetro">Centímetro</option>
+                                    <option value="Caja">Caja</option>
+                                    <option value="Paquete">Paquete</option>
+                                    <option value="Docena">Docena</option>
+                                    <option value="Unidad">Unidad</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('unidad')}" 
+                                     th:errors="*{unidad}"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cuarta fila: Precio y Stock -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="precio">
+                                    <i class="fas fa-dollar-sign text-primary"></i> Precio *
+                                </label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">S/.</span>
+                                    </div>
+                                    <input type="number" step="0.01" th:field="*{precio}" class="form-control" 
+                                           th:classappend="${#fields.hasErrors('precio')} ? 'is-invalid' : ''" 
+                                           required min="0.01" placeholder="0.00">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('precio')}" 
+                                         th:errors="*{precio}"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="stock">
+                                    <i class="fas fa-boxes text-primary"></i> Stock Actual *
+                                </label>
+                                <input type="number" th:field="*{stock}" class="form-control" 
+                                       th:classappend="${#fields.hasErrors('stock')} ? 'is-invalid' : ''" 
+                                       required min="0" placeholder="0">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('stock')}" 
+                                     th:errors="*{stock}"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="stockMinimo">
+                                    <i class="fas fa-exclamation-triangle text-warning"></i> Stock Mínimo
+                                </label>
+                                <input type="number" th:field="*{stockMinimo}" class="form-control" 
+                                       th:classappend="${#fields.hasErrors('stockMinimo')} ? 'is-invalid' : ''" 
+                                       min="0" placeholder="0">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('stockMinimo')}" 
+                                     th:errors="*{stockMinimo}"></div>
+                                <small class="form-text text-muted">Para alertas de stock bajo</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estado -->
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" th:field="*{activo}" class="form-check-input" id="activo">
+                            <label class="form-check-label" for="activo">
+                                <i class="fas fa-toggle-on text-success"></i> Producto activo
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">Los productos inactivos no aparecerán en las ventas</small>
+                    </div>
+                    
+                    <!-- Información calculada (solo en edición) -->
+                    <div th:if="${modo == 'editar' and producto.id != null}" class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-calculator text-info"></i> Información Calculada
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1">
+                                        <strong>Valor en Inventario:</strong> 
+                                        <span class="text-success">
+                                            S/. <span th:text="${#numbers.formatDecimal(producto.valorInventario, 0, 2)}"></span>
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1">
+                                        <strong>Estado de Stock:</strong> 
+                                        <span th:if="${producto.stockBajo}" class="badge badge-warning">Stock Bajo</span>
+                                        <span th:unless="${producto.stockBajo}" class="badge badge-success">Stock Normal</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="form-group text-center">
+                        <button type="submit" class="btn btn-primary btn-lg mr-2">
+                            <i class="fas fa-save"></i> 
+                            <span th:text="${modo == 'editar'} ? 'Actualizar Producto' : 'Registrar Producto'"></span>
+                        </button>
+                        <a th:href="@{/producto/listar}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+    
+    <script>
+        // Validación del formulario
+        $(document).ready(function() {
+            // Formatear el precio mientras se escribe
+            $('#precio').on('input', function() {
+                var value = parseFloat($(this).val());
+                if (!isNaN(value)) {
+                    $(this).val(value.toFixed(2));
+                }
+            });
+            
+            // Validar que el stock mínimo no sea mayor al stock actual
+            $('#stock, #stockMinimo').on('input', function() {
+                var stock = parseInt($('#stock').val()) || 0;
+                var stockMinimo = parseInt($('#stockMinimo').val()) || 0;
+                
+                if (stockMinimo > stock && stock > 0) {
+                    $('#stockMinimo').addClass('is-invalid');
+                    if (!$('.stock-warning').length) {
+                        $('#stockMinimo').after('<div class="invalid-feedback stock-warning">El stock mínimo no puede ser mayor al stock actual</div>');
+                    }
+                } else {
+                    $('#stockMinimo').removeClass('is-invalid');
+                    $('.stock-warning').remove();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
