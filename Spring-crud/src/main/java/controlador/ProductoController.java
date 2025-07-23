@@ -21,14 +21,22 @@ public class ProductoController {
     private ProductoService productoService;
 
     /**
+     * Método helper para agregar atributos comunes a la vista listar
+     */
+    private void agregarAtributosComunes(Model model) {
+        model.addAttribute("categorias", productoService.listarCategorias());
+        model.addAttribute("productosStockBajo", productoService.listarProductosConStockBajo());
+    }
+
+    /**
      * Muestra la lista de todos los productos
      */
     @GetMapping("/listar")
     public String listarProductos(Model model) {
         model.addAttribute("productos", productoService.listarTodos());
         model.addAttribute("titulo", "Lista de Productos");
-        model.addAttribute("categorias", productoService.listarCategorias());
-        model.addAttribute("productosStockBajo", productoService.listarProductosConStockBajo());
+        model.addAttribute("soloStockBajo", false);
+        agregarAtributosComunes(model);
         return "producto/listar";
     }
 
@@ -120,6 +128,8 @@ public class ProductoController {
         model.addAttribute("productos", productoService.buscarPorNombreODescripcion(criterio));
         model.addAttribute("titulo", "Resultados de búsqueda: " + criterio);
         model.addAttribute("criterio", criterio);
+        model.addAttribute("soloStockBajo", false);
+        agregarAtributosComunes(model);
         return "producto/listar";
     }
 
@@ -131,7 +141,8 @@ public class ProductoController {
         model.addAttribute("productos", productoService.buscarPorCategoria(categoria));
         model.addAttribute("titulo", "Productos - Categoría: " + categoria);
         model.addAttribute("categoriaSeleccionada", categoria);
-        model.addAttribute("categorias", productoService.listarCategorias());
+        model.addAttribute("soloStockBajo", false);
+        agregarAtributosComunes(model);
         return "producto/listar";
     }
 
@@ -143,6 +154,7 @@ public class ProductoController {
         model.addAttribute("productos", productoService.listarProductosConStockBajo());
         model.addAttribute("titulo", "Productos con Stock Bajo");
         model.addAttribute("soloStockBajo", true);
+        agregarAtributosComunes(model);
         return "producto/listar";
     }
 

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Listado de Ventas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .badge-active {
+            background-color: #28a745;
+        }
+        .badge-inactive {
+            background-color: #dc3545;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+  <header th:replace="~{fragments/header::header}"></header>
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0"><i class="bi bi-receipt"></i> Listado de Ventas</h2>
+                <a th:href="@{/ventas/nueva}" class="btn btn-light btn-sm">
+                    <i class="bi bi-plus-circle"></i> Nueva Venta
+                </a>
+            </div>
+
+            <div class="card-body">
+                <!-- Filtros básicos -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" placeholder="Buscar por cliente..." id="searchInput">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="statusFilter">
+                            <option value="all">Todos los estados</option>
+                            <option value="active">Activas</option>
+                            <option value="inactive">Anuladas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="filterTable()">
+                            <i class="bi bi-funnel"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mensajes de confirmación -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+                    <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <!-- Tabla simplificada de ventas -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered" id="salesTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Documento</th>
+                                <th class="text-end">Total</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="venta : ${ventas}">
+                                <td th:text="${venta.id}"></td>
+                                <td th:text="${#temporals.format(venta.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td th:text="${venta.cliente.apellido + ', ' + venta.cliente.nombre}"></td>
+                                <td>
+                                    <span th:text="${venta.tipoComprobante}"></span>
+                                    <span th:if="${venta.numeroComprobante}" th:text="' - ' + ${venta.numeroComprobante}"></span>
+                                </td>
+                                <td class="text-end" th:text="${'S/ ' + #numbers.formatDecimal(venta.total, 1, 2, 'COMMA')}"></td>
+                                <td>
+                                    <span th:if="${venta.estado}" class="badge badge-active">ACTIVA</span>
+                                    <span th:unless="${venta.estado}" class="badge badge-inactive">ANULADA</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a th:href="@{/ventas/detalle/} + ${venta.id}" 
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a th:if="${venta.estado}"
+                                           th:href="@{/ventas/anular/} + ${venta.id}" 
+                                           class="btn btn-sm btn-outline-danger"
+                                           title="Anular venta">
+                                            <i class="bi bi-x-circle"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${ventas.empty}">
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-exclamation-circle"></i> No se encontraron ventas registradas
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Función básica de filtrado
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const table = document.getElementById('salesTable');
+            const tr = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < tr.length; i++) {
+                const tdCliente = tr[i].getElementsByTagName('td')[2];
+                const tdEstado = tr[i].getElementsByTagName('td')[5];
+                
+                if (tdCliente && tdEstado) {
+                    const txtValue = tdCliente.textContent || tdCliente.innerText;
+                    const isActive = tdEstado.textContent.includes('ACTIVA');
+                    
+                    const clienteMatch = txtValue.toUpperCase().indexOf(filter) > -1;
+                    const statusMatch = 
+                        statusFilter === 'all' || 
+                        (statusFilter === 'active' && isActive) || 
+                        (statusFilter === 'inactive' && !isActive);
+                    
+                    if (clienteMatch && statusMatch) {
+                        tr[i].style.display = '';
+                    } else {
+                        tr[i].style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        // Permitir filtrar con Enter
+        document.getElementById('searchInput').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                filterTable();
+            }
+        });
+    </script>
+</body>
+</html>
