@@ -5,9 +5,6 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.math.BigDecimal;
 
-/**
- * Detalle de productos vendidos en una Venta
- */
 @Entity
 @Table(name = "detalle_ventas")
 @Data
@@ -27,15 +24,17 @@ public class DetalleVenta {
     
     @NotNull(message = "La cantidad es requerida")
     @Min(value = 1, message = "La cantidad debe ser al menos 1")
-    private Integer cantidad;
+    private Integer cantidad = 1; // Valor por defecto
     
     @NotNull(message = "El precio es requerido")
     @DecimalMin(value = "0.01", message = "El precio debe ser mayor a 0")
     @Column(precision = 10, scale = 2)
-    private BigDecimal precio;
-    
-    // Subtotal calculado
+    private BigDecimal precio = BigDecimal.ZERO; // Inicializar precio
+
     public BigDecimal getSubtotal() {
+        if (cantidad == null || precio == null) {
+            return BigDecimal.ZERO;
+        }
         return precio.multiply(BigDecimal.valueOf(cantidad));
     }
 }

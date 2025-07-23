@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,18 +33,33 @@ public class VentaController {
     @GetMapping("/nueva")
     public String mostrarFormulario(Model model) {
         Venta venta = new Venta();
-        venta.setDetalles(List.of(new DetalleVenta()));
+        
+        // Inicializar con un detalle y valores por defecto
+        DetalleVenta detalle = new DetalleVenta();
+        detalle.setCantidad(1);
+        detalle.setPrecio(BigDecimal.ZERO);
+        
+        venta.setDetalles(List.of(detalle));
         
         model.addAttribute("venta", venta);
         model.addAttribute("clientes", clienteService.listarActivos());
         model.addAttribute("productos", productoService.listarActivos());
+        model.addAttribute("titulo", "Nueva Venta");
         return "venta/formulario";
     }
 
     @PostMapping("/guardar")
-    public String guardarVenta(@ModelAttribute Venta venta) {
-        ventaService.guardarVenta(venta);
-        return "redirect:/ventas";
+    public String guardarVenta(@ModelAttribute Venta venta, Model model) {
+        try {
+            ventaService.guardarVenta(venta);
+            return "redirect:/ventas";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error al guardar la venta: " + e.getMessage());
+            model.addAttribute("venta", venta);
+            model.addAttribute("clientes", clienteService.listarActivos());
+            model.addAttribute("productos", productoService.listarActivos());
+            return "venta/formulario";
+        }
     }
 
     @GetMapping("/anular/{id}")
@@ -67,5 +84,33 @@ public class VentaController {
         }
         
         return "venta/listar";
+    }
+
+    @PostMapping("/agregar-detalle")
+    public String agregarDetalle(@ModelAttribute Venta venta, Model model) {
+        DetalleVenta nuevoDetalle = new DetalleVenta();
+        nuevoDetalle.setCantidad(1);
+        nuevoDetalle.setPrecio(BigDecimal.ZERO);
+        venta.getDetalles().add(nuevoDetalle);
+        
+        model.addAttribute("venta", venta);
+        model.addAttribute("clientes", clienteService.listarActivos());
+        model.addAttribute("productos", productoService.listarActivos());
+        return "venta/formulario";
+    }
+
+    @PostMapping("/eliminar-detalle")
+    public String eliminarDetalle(
+            @ModelAttribute Venta venta,
+            @RequestParam("index") int index,
+            Model model) {
+        if (index >= 0 && index < venta.getDetalles().size()) {
+            venta.getDetalles().remove(index);
+        }
+        
+        model.addAttribute("venta", venta);
+        model.addAttribute("clientes", clienteService.listarActivos());
+        model.addAttribute("productos", productoService.listarActivos());
+        return "venta/formulario";
     }
 }

@@ -4,53 +4,127 @@
     <title th:text="${titulo}">Formulario Venta</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .btn-add-remove {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+    </style>
 </head>
 
 <body>
   <header th:replace="~{fragments/header::header}"></header>
-<form th:action="@{/ventas/guardar}" th:object="${venta}" method="post">
-    <div class="mb-3">
-        <label>Cliente</label>
-        <select th:field="*{cliente.id}" class="form-select">
-            <option th:each="cliente : ${clientes}" 
-                    th:value="${cliente.id}"
-                    th:text="${cliente.apellido + ', ' + cliente.nombre}"></option>
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <label>Productos</label>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Precio</th>
-                    <th>Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="detalle, stat : *{detalles}">
-                    <td>
-                        <select th:field="*{detalles[__${stat.index}__].producto.id}" class="form-select">
-                            <option th:each="producto : ${productos}" 
-                                    th:value="${producto.id}"
-                                    th:text="${producto.nombre + ' (Stock: ' + producto.stock + ')'}"></option>
-                        </select>
-                    </td>
-                    <td>
-                        <input type="number" th:field="*{detalles[__${stat.index}__].cantidad}" class="form-control" min="1">
-                    </td>
-                    <td>
-                        <input type="number" th:field="*{detalles[__${stat.index}__].precio}" class="form-control" min="0.01" step="0.01">
-                    </td>
-                    <td th:text="${detalle.subtotal}"></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+  
+  <div class="container mt-4">
+    <h2 th:text="${titulo}">Formulario de Venta</h2>
     
-    <button type="submit" class="btn btn-primary">Guardar Venta</button>
-</form>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    
+    <form th:action="@{/ventas/guardar}" th:object="${venta}" method="post">
+        <div class="card mb-3">
+            <div class="card-header">Datos Generales</div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <select th:field="*{cliente.id}" class="form-control" required>
+                        <option value="">-- Seleccione un cliente --</option>
+                        <option th:each="cliente : ${clientes}" 
+                                th:value="${cliente.id}"
+                                th:text="${cliente.apellido + ', ' + cliente.nombre}"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Detalle de Productos</span>
+                <button type="submit" name="agregarDetalle" formaction="@{/ventas/agregar-detalle}" 
+                        class="btn btn-success btn-sm btn-add-remove">
+                    <i class="fas fa-plus"></i> Agregar Producto
+                </button>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Producto</th>
+                            <th width="120px">Cantidad</th>
+                            <th width="150px">Precio Unitario</th>
+                            <th width="150px">Subtotal</th>
+                            <th width="50px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="detalle, stat : *{detalles}">
+                            <td>
+                                <select th:field="*{detalles[__${stat.index}__].producto.id}" 
+                                        class="form-control" required>
+                                    <option value="">-- Seleccione producto --</option>
+                                    <option th:each="producto : ${productos}" 
+                                            th:value="${producto.id}"
+                                            th:text="${producto.nombre + ' (Stock: ' + producto.stock + ')'}"></option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" th:field="*{detalles[__${stat.index}__].cantidad}" 
+                                       class="form-control" min="1" required>
+                            </td>
+                            <td>
+                                <input type="number" th:field="*{detalles[__${stat.index}__].precio}" 
+                                       class="form-control" min="0.01" step="0.01" required>
+                            </td>
+                            <td class="text-right">
+                                <span th:text="${#numbers.formatDecimal(detalle.subtotal, 1, 'COMMA', 2, 'POINT')}"></span>
+                            </td>
+                            <td class="text-center">
+                                <button type="submit" name="eliminarDetalle" 
+                                        formaction="@{/ventas/eliminar-detalle(index=${stat.index})}" 
+                                        class="btn btn-danger btn-sm btn-add-remove"
+                                        th:disabled="${stat.index == 0}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right font-weight-bold">Total:</td>
+                            <td class="text-right font-weight-bold">
+                                <span th:text="${#numbers.formatDecimal(venta.total, 1, 'COMMA', 2, 'POINT')}"></span>
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Venta
+            </button>
+            <a th:href="@{/ventas}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+        </div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Actualizar subtotal cuando cambia cantidad o precio
+    $(document).ready(function() {
+        $('input[th\\:field*="cantidad"], input[th\\:field*="precio"]').on('change', function() {
+            var row = $(this).closest('tr');
+            var cantidad = parseFloat(row.find('input[th\\:field*="cantidad"]').val()) || 0;
+            var precio = parseFloat(row.find('input[th\\:field*="precio"]').val()) || 0;
+            var subtotal = cantidad * precio;
+            row.find('td:nth-child(4) span').text(subtotal.toFixed(2));
+        });
+    });
+  </script>
 </body>
+</html>
